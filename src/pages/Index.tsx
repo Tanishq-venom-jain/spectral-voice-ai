@@ -7,6 +7,7 @@ import { FloatingParticles } from "@/components/FloatingParticles";
 import { Navigation } from "@/components/Navigation";
 import { CodeDemo } from "@/components/CodeDemo";
 import { ContactSection } from "@/components/ContactSection";
+import { InteractiveJarvis } from "@/components/InteractiveJarvis";
 
 const Index = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -23,6 +24,7 @@ const Index = () => {
       <div className={`transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <HeroSection />
         <VoiceVisualizer />
+        <InteractiveJarvis />
         <FeaturesSection />
         <CodeDemo />
         <ContactSection />
