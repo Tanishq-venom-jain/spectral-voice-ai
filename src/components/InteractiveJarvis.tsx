@@ -1,6 +1,6 @@
 
 import { useState, useRef } from "react";
-import { Mic, MicOff, Volume2 } from "lucide-react";
+import { Mic, MicOff, Volume2, Youtube, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // ========== CONFIGURE GEMINI ==========
@@ -28,6 +28,133 @@ export const InteractiveJarvis = () => {
     utterance.onend = () => setIsSpeaking(false);
     speechSynthesis.speak(utterance);
     console.log("Jarvis:", text);
+  };
+
+  // ========== BROWSER AUTOMATION FUNCTIONS ==========
+  const openYoutube = () => {
+    window.open('https://www.youtube.com', '_blank');
+    speak("Opening YouTube for you.");
+  };
+
+  const searchYoutube = (query: string) => {
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    window.open(searchUrl, '_blank');
+    speak(`Searching YouTube for ${query}`);
+  };
+
+  const openWebsite = (url: string) => {
+    if (!url.startsWith('http')) {
+      url = 'https://' + url;
+    }
+    window.open(url, '_blank');
+    speak(`Opening ${url}`);
+  };
+
+  const googleSearch = (query: string) => {
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    window.open(searchUrl, '_blank');
+    speak(`Searching Google for ${query}`);
+  };
+
+  const openSocialMedia = (platform: string) => {
+    const platforms: { [key: string]: string } = {
+      'facebook': 'https://www.facebook.com',
+      'twitter': 'https://www.twitter.com',
+      'instagram': 'https://www.instagram.com',
+      'linkedin': 'https://www.linkedin.com',
+      'tiktok': 'https://www.tiktok.com',
+      'reddit': 'https://www.reddit.com'
+    };
+    
+    if (platforms[platform.toLowerCase()]) {
+      window.open(platforms[platform.toLowerCase()], '_blank');
+      speak(`Opening ${platform}`);
+    } else {
+      speak(`Sorry, I don't know how to open ${platform}`);
+    }
+  };
+
+  // ========== COMMAND PROCESSING ==========
+  const processCommand = async (command: string) => {
+    const lowerCommand = command.toLowerCase();
+    
+    // YouTube commands
+    if (lowerCommand.includes('open youtube') || lowerCommand.includes('youtube')) {
+      openYoutube();
+      return;
+    }
+    
+    if (lowerCommand.includes('search youtube for') || lowerCommand.includes('youtube search')) {
+      const searchQuery = command.replace(/.*?(?:search youtube for|youtube search)/i, '').trim();
+      if (searchQuery) {
+        searchYoutube(searchQuery);
+        return;
+      }
+    }
+    
+    // Google search commands
+    if (lowerCommand.includes('google search') || lowerCommand.includes('search google for')) {
+      const searchQuery = command.replace(/.*?(?:google search|search google for)/i, '').trim();
+      if (searchQuery) {
+        googleSearch(searchQuery);
+        return;
+      }
+    }
+    
+    // Website opening commands
+    if (lowerCommand.includes('open website') || lowerCommand.includes('go to')) {
+      const url = command.replace(/.*?(?:open website|go to)/i, '').trim();
+      if (url) {
+        openWebsite(url);
+        return;
+      }
+    }
+    
+    // Social media commands
+    if (lowerCommand.includes('open facebook')) {
+      openSocialMedia('facebook');
+      return;
+    }
+    if (lowerCommand.includes('open twitter')) {
+      openSocialMedia('twitter');
+      return;
+    }
+    if (lowerCommand.includes('open instagram')) {
+      openSocialMedia('instagram');
+      return;
+    }
+    if (lowerCommand.includes('open linkedin')) {
+      openSocialMedia('linkedin');
+      return;
+    }
+    if (lowerCommand.includes('open tiktok')) {
+      openSocialMedia('tiktok');
+      return;
+    }
+    if (lowerCommand.includes('open reddit')) {
+      openSocialMedia('reddit');
+      return;
+    }
+    
+    // Time and date commands
+    if (lowerCommand.includes('what time') || lowerCommand.includes('current time')) {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      speak(`The current time is ${timeString}`);
+      setResponse(`Current time: ${timeString}`);
+      return;
+    }
+    
+    if (lowerCommand.includes('what date') || lowerCommand.includes('today\'s date')) {
+      const now = new Date();
+      const dateString = now.toLocaleDateString();
+      speak(`Today's date is ${dateString}`);
+      setResponse(`Today's date: ${dateString}`);
+      return;
+    }
+    
+    // If no specific command matched, use Gemini AI
+    await handleQuery(command);
   };
 
   // ========== SPEECH-TO-TEXT ==========
@@ -60,7 +187,7 @@ export const InteractiveJarvis = () => {
         return;
       }
       
-      handleQuery(transcript);
+      processCommand(transcript);
     };
 
     recognitionRef.current.onerror = (event: any) => {
@@ -87,7 +214,6 @@ export const InteractiveJarvis = () => {
   // ========== GEMINI REQUEST ==========
   const sendPromptToGemini = async (prompt: string) => {
     try {
-      // Using fetch since we need to install the Google Generative AI package
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
@@ -124,10 +250,10 @@ export const InteractiveJarvis = () => {
   };
 
   const handleManualInput = () => {
-    const userInput = prompt("Enter your question for J.A.R.V.I.S:");
+    const userInput = prompt("Enter your command for J.A.R.V.I.S:");
     if (userInput) {
       setTranscript(userInput);
-      handleQuery(userInput);
+      processCommand(userInput);
     }
   };
 
@@ -135,7 +261,7 @@ export const InteractiveJarvis = () => {
     <section className="py-20 relative">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold mb-8 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-          Interactive J.A.R.V.I.S
+          Interactive J.A.R.V.I.S with Browser Control
         </h2>
         
         <div className="max-w-2xl mx-auto bg-gray-900/50 rounded-lg p-8 backdrop-blur-sm border border-cyan-500/20">
@@ -162,7 +288,7 @@ export const InteractiveJarvis = () => {
                 className="px-6 py-4 border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
                 disabled={isSpeaking || isListening}
               >
-                Type Message
+                Type Command
               </Button>
             </div>
 
@@ -188,9 +314,36 @@ export const InteractiveJarvis = () => {
             </div>
           )}
 
-          <div className="mt-6 text-sm text-gray-400">
-            <p>Click "Start Voice Command" to speak with J.A.R.V.I.S or use "Type Message" to enter text.</p>
-            <p className="mt-2">Say "exit" or "stop" to end the conversation.</p>
+          <div className="mt-6 text-sm text-gray-400 space-y-2">
+            <div className="flex items-center justify-center mb-4 space-x-4">
+              <Youtube className="text-red-500" size={20} />
+              <Globe className="text-green-500" size={20} />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-left">
+              <div>
+                <p className="text-cyan-400 font-semibold">YouTube Commands:</p>
+                <p>• "Open YouTube"</p>
+                <p>• "Search YouTube for [topic]"</p>
+              </div>
+              <div>
+                <p className="text-cyan-400 font-semibold">Browser Commands:</p>
+                <p>• "Google search [query]"</p>
+                <p>• "Open website [url]"</p>
+              </div>
+              <div>
+                <p className="text-cyan-400 font-semibold">Social Media:</p>
+                <p>• "Open Facebook/Twitter/Instagram"</p>
+                <p>• "Open LinkedIn/TikTok/Reddit"</p>
+              </div>
+              <div>
+                <p className="text-cyan-400 font-semibold">Info Commands:</p>
+                <p>• "What time is it?"</p>
+                <p>• "What's today's date?"</p>
+              </div>
+            </div>
+            
+            <p className="mt-4 text-center">Say "exit" or "stop" to end the conversation.</p>
           </div>
         </div>
       </div>
